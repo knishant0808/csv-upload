@@ -40,54 +40,39 @@ const uploadFile = async (req, res) => {
         upload(req, res, async (err) => {
             if (err) {
                 return res.status(400).json({ error: err });
-            } else {
-                if (req.file == undefined) {
-                    return res.status(400).json({ error: 'No file selected!' });
-                } else {
-                    const originalFileName = req.file.originalname;
-                    const filePath = req.file.path.replace('server', 'server/uploads');
-                    const fileName = await getUniqueFileName(filePath, originalFileName);
-
-                    const fileMetadata = new FileMetadata({
-                        fileName: originalFileName,
-                        fileSize: req.file.size,
-                        fileAddress: filePath.replace(originalFileName, fileName)
-                    });
-
-                    await fileMetadata.save();
-
-                    return res.status(200).json({ message: 'File uploaded successfully!' });
-                }
             }
+
+            if (req.file == undefined) {
+                return res.status(400).json({ error: 'No file selected!' });
+            }
+
+            const originalFileName = req.file.originalname;
+
+            // Check if file exists in the database
+            const existsInDb = await FileMetadata.findOne({ fileName: originalFileName }).exec();
+            if (existsInDb) {
+                return res.status(400).json({ error: 'File already exists in database!' });
+            }
+
+            // Process and save file to local storage
+            const filePath = req.file.path.replace('server', 'server/uploads');
+
+            // Create file metadata
+            const fileMetadata = new FileMetadata({
+                fileName: originalFileName,
+                fileSize: req.file.size,
+                fileAddress: filePath
+            });
+
+            // Save metadata to database
+            await fileMetadata.save();
+
+            return res.status(200).json({ message: 'File uploaded successfully!' });
         });
-
-        async function getUniqueFileName(filePath, originalFileName) {
-            let fileName = originalFileName;
-            let count = 1;
-            const extension = path.extname(originalFileName);
-            const baseName = path.basename(originalFileName, extension);
-        
-            // Check both file system and database for existing file
-            while (await fileExists(filePath) || await FileMetadata.findOne({ fileName }).exec()) {
-                fileName = `${baseName} (${count})${extension}`;
-                filePath = path.join(path.dirname(filePath), fileName);
-                count++;
-            }
-        
-            return fileName;
-        }
-
-        async function fileExists(filePath) {
-            try {
-                await fs.access(filePath, fs.constants.F_OK);
-                return true;
-            } catch {
-                return false;
-            }
-        };
     } catch (error) {
         return res.status(500).json({ error: 'Internal server error!' });
     }
 };
+
 
 module.exports = { uploadFile };
