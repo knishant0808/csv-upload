@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSV File Viewer</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSV File Viewer</h1>
+
+    <h2>CSV Data</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <% if (fileData.length > 0) { %>
+                    <% Object.keys(fileData[0]).forEach((header) => { %>
+                        <th><%= header %></th>
+                    <% }); %>
+                <% } %>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (fileData.length > 0) { %>
+                <% fileData.forEach((row) => { %>
+                    <tr>
+                        <% Object.values(row).forEach((value) => { %>
+                            <td><%= value %></td>
+                        <% }); %>
+                    </tr>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="2">No data found in the CSV file.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</body>
+</html>

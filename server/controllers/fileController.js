@@ -3,6 +3,7 @@ const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const FileMetadata = require('../models/fileMetadata');
+const csvParser = require('csv-parser');
 
 // Set storage engine for multer
 const storage = multer.diskStorage({
@@ -55,7 +56,7 @@ const uploadFile = async (req, res) => {
             }
 
             // Process and save file to local storage
-            const filePath = req.file.path.replace('server', 'server/uploads');
+            const filePath = req.file.path.replace('server', 'server');
 
             // Create file metadata
             const fileMetadata = new FileMetadata({
@@ -74,5 +75,36 @@ const uploadFile = async (req, res) => {
     }
 };
 
+// Function to view a CSV file
+const viewFile = async (req, res) => {
+    try {
+        // Get the fileId from the request parameters
+        const fileId = req.params.fileId;
 
-module.exports = { uploadFile };
+        // Find the file metadata by fileId
+        const fileMetadata = await FileMetadata.findById(fileId).exec();
+
+        if (!fileMetadata) {
+            return res.status(404).json({ error: 'File not found!' });
+        }
+
+        // Read and parse the CSV file
+        const filePath = fileMetadata.fileAddress;
+        const fileData = [];
+        
+        fs.createReadStream(filePath)
+            .pipe(csvParser())
+            .on('data', (row) => {
+                fileData.push(row);
+            })
+            .on('end', () => {
+                // Render the CSV data in a view (e.g., using a template engine like EJS)
+                res.render('csvView', { fileData }); // Modify the template engine and view as needed
+            });
+    } catch (error) {
+        return res.status(500).json({ error: 'Internal server error!' });
+    }
+};
+
+
+module.exports = { uploadFile, viewFile };

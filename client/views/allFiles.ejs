@@ -25,7 +25,7 @@
                 <h2>All Files</h2>
                 <ul>
                     <% fileMetadata.forEach(function(file) { %>
-                        <li><%= file.fileName %></li>
+                        <li><a href="/file/view/<%= file._id %>"><%= file.fileName %></a></li>
                     <% }); %>
                 </ul>
             </div>

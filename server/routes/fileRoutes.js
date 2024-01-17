@@ -5,7 +5,7 @@ const fileController = require('../controllers/fileController');
 
 // Route: /file/upload
 router.post('/upload', fileController.uploadFile);
-router.get('/view', fileController.viewFile);
+router.get('/view/:fileId', fileController.viewFile);
 
 // Add more routes for '/file' here
 
