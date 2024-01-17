@@ -80,6 +80,8 @@ const viewFile = async (req, res) => {
     try {
         // Get the fileId from the request parameters
         const fileId = req.params.fileId;
+        const page = req.query.page || 1; // Get the requested page number from query parameter
+        const pageSize = 100; // Set the page size to 100 records per page
 
         // Find the file metadata by fileId
         const fileMetadata = await FileMetadata.findById(fileId).exec();
@@ -88,18 +90,25 @@ const viewFile = async (req, res) => {
             return res.status(404).json({ error: 'File not found!' });
         }
 
-        // Read and parse the CSV file
+        // Read and parse the CSV file with pagination
         const filePath = fileMetadata.fileAddress;
         const fileData = [];
-        
+        let counter = 0;
+
         fs.createReadStream(filePath)
             .pipe(csvParser())
             .on('data', (row) => {
-                fileData.push(row);
+                if (counter >= (page - 1) * pageSize && counter < page * pageSize) {
+                    fileData.push(row);
+                }
+                counter++;
             })
             .on('end', () => {
-                // Render the CSV data in a view (e.g., using a template engine like EJS)
-                res.render('csvView', { fileData }); // Modify the template engine and view as needed
+                // Calculate the total number of pages based on the data length and page size
+                const totalPages = Math.ceil(counter / pageSize);
+
+                // Render the CSV data in a view with pagination
+                res.render('csvView', { fileData, currentPage: parseInt(page), pageSize, totalPages }); // Include totalPages in the rendering context
             });
     } catch (error) {
         return res.status(500).json({ error: 'Internal server error!' });

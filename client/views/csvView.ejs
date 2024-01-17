@@ -4,15 +4,29 @@
     <title>CSV File Viewer</title>
     <!-- Include Bootstrap CSS from CDN -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Include FontAwesome CSS from CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <h1>CSV File Viewer</h1>
 
+        <a href="/" class="btn btn-primary mb-3">Back to Home</a>
+
         <div class="form-group">
             <label for="searchInput">Search:</label>
             <input type="text" class="form-control" id="searchInput" placeholder="Enter search term">
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="d-flex justify-content-between">
+            <ul class="pagination">
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                    </li>
+                <% } %>
+            </ul>
         </div>
 
         <table class="table table-bordered">
@@ -31,7 +45,7 @@
                         <% }); %>
                     <% } %>
                 </tr>
-            </thead>            
+            </thead>
             <tbody>
                 <% if (fileData.length > 0) { %>
                     <% fileData.forEach((row) => { %>
@@ -50,7 +64,7 @@
         </table>
     </div>
 
-    <!-- Include your JavaScript file for search functionality -->
+    <!-- Include your JavaScript file for search and sorting functionality -->
     <script src="/js/viewCsvScript.js"></script>
 </body>
 </html>
