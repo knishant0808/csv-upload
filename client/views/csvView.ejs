@@ -2,53 +2,55 @@
 <html>
 <head>
     <title>CSV File Viewer</title>
-    <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-    </style>
+    <!-- Include Bootstrap CSS from CDN -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
 </head>
 <body>
-    <h1>CSV File Viewer</h1>
+    <div class="container">
+        <h1>CSV File Viewer</h1>
 
-    <h2>CSV Data</h2>
+        <div class="form-group">
+            <label for="searchInput">Search:</label>
+            <input type="text" class="form-control" id="searchInput" placeholder="Enter search term">
+        </div>
 
-    <table>
-        <thead>
-            <tr>
-                <% if (fileData.length > 0) { %>
-                    <% Object.keys(fileData[0]).forEach((header) => { %>
-                        <th><%= header %></th>
-                    <% }); %>
-                <% } %>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (fileData.length > 0) { %>
-                <% fileData.forEach((row) => { %>
-                    <tr>
-                        <% Object.values(row).forEach((value) => { %>
-                            <td><%= value %></td>
-                        <% }); %>
-                    </tr>
-                <% }); %>
-            <% } else { %>
+        <table class="table table-bordered">
+            <thead class="thead-dark">
                 <tr>
-                    <td colspan="2">No data found in the CSV file.</td>
+                    <% if (fileData.length > 0) { %>
+                        <% Object.keys(fileData[0]).forEach((header) => { %>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <%= header %>
+                                    <button class="btn btn-link ml-2" onclick="sortTable('<%= header %>')">
+                                        <i class="fas fa-sort"></i>
+                                    </button>
+                                </div>
+                            </th>
+                        <% }); %>
+                    <% } %>
                 </tr>
-            <% } %>
-        </tbody>
-    </table>
+            </thead>            
+            <tbody>
+                <% if (fileData.length > 0) { %>
+                    <% fileData.forEach((row) => { %>
+                        <tr>
+                            <% Object.values(row).forEach((value) => { %>
+                                <td><%= value %></td>
+                            <% }); %>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="2">No data found in the CSV file.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Include your JavaScript file for search functionality -->
+    <script src="/js/viewCsvScript.js"></script>
 </body>
 </html>
