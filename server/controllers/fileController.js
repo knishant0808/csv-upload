@@ -1,27 +1,30 @@
-// Import dependencies
-const fs = require('fs');
-const multer = require('multer');
-const path = require('path');
-const FileMetadata = require('../models/fileMetadata');
-const csvParser = require('csv-parser');
+// Import required modules
+const fs = require('fs'); // File System module to handle file operations
+const multer = require('multer'); // Multer for handling multipart/form-data (file uploads)
+const path = require('path'); // Path module to handle file paths
+const FileMetadata = require('../models/fileMetadata'); // Mongoose model for file metadata
+const csvParser = require('csv-parser'); // CSV parser to parse CSV files
 
-// Set storage engine for multer
+// Configure the storage engine for multer (file upload middleware)
 const storage = multer.diskStorage({
+    // Destination folder for uploaded files
     destination: './server/uploads',
+    // Naming convention for uploaded files
     filename: function (req, file, cb) {
         cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
     }
 });
 
-// Initialize multer upload
+// Initialize multer with the defined storage engine and file filter
 const upload = multer({
     storage: storage,
+    // File filter function to restrict file types
     fileFilter: function (req, file, cb) {
         checkFileType(file, cb);
     }
-}).single('csvFile');
+}).single('csvFile'); // Specify that it will handle single file uploads with the field name 'csvFile'
 
-// Check file type
+// Function to check the file type (to allow only CSV files)
 function checkFileType(file, cb) {
     const filetypes = /csv/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -34,38 +37,37 @@ function checkFileType(file, cb) {
     }
 }
 
-// Upload and save file metadata
+// Controller function to handle file uploading and saving file metadata
 const uploadFile = async (req, res) => {
     try {
-        // Upload file using multer
+        // Use multer to upload the file
         upload(req, res, async (err) => {
             if (err) {
                 return res.status(400).json({ error: err });
             }
-
             if (req.file == undefined) {
                 return res.status(400).json({ error: 'No file selected!' });
             }
 
             const originalFileName = req.file.originalname;
 
-            // Check if file exists in the database
+            // Check if file already exists in the database
             const existsInDb = await FileMetadata.findOne({ fileName: originalFileName }).exec();
             if (existsInDb) {
                 return res.status(400).json({ error: 'File already exists in database!' });
             }
 
-            // Process and save file to local storage
+            // File path adjustment (if needed)
             const filePath = req.file.path.replace('server', 'server');
 
-            // Create file metadata
+            // Create new file metadata instance
             const fileMetadata = new FileMetadata({
                 fileName: originalFileName,
                 fileSize: req.file.size,
                 fileAddress: filePath
             });
 
-            // Save metadata to database
+            // Save the file metadata to the database
             await fileMetadata.save();
 
             return res.status(200).json({ message: 'File uploaded successfully!' });
@@ -75,23 +77,30 @@ const uploadFile = async (req, res) => {
     }
 };
 
-// Function to view a CSV file
+// Controller function to view a CSV file
 const viewFile = async (req, res) => {
     try {
-        // Get the fileId from the request parameters
+        // Extract the file ID from request parameters
         const fileId = req.params.fileId;
-        const page = req.query.page || 1; // Get the requested page number from query parameter
-        const pageSize = 100; // Set the page size to 100 records per page
+        // Pagination settings: default page and number of records per page
+        const page = req.query.page || 1;
+        const pageSize = 100;
 
-        // Find the file metadata by fileId
+        // Retrieve the file metadata from the database using the file ID
         const fileMetadata = await FileMetadata.findById(fileId).exec();
 
         if (!fileMetadata) {
             return res.status(404).json({ error: 'File not found!' });
         }
 
-        // Read and parse the CSV file with pagination
+        // File reading and parsing with pagination
         const filePath = fileMetadata.fileAddress;
+
+        // Check if the file exists at the given path
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'File does not exist at the specified path!' });
+        }
+
         const fileData = [];
         let counter = 0;
 
@@ -104,16 +113,16 @@ const viewFile = async (req, res) => {
                 counter++;
             })
             .on('end', () => {
-                // Calculate the total number of pages based on the data length and page size
+                // Calculate total pages for pagination
                 const totalPages = Math.ceil(counter / pageSize);
 
-                // Render the CSV data in a view with pagination
-                res.render('csvView', { fileData, currentPage: parseInt(page), pageSize, totalPages }); // Include totalPages in the rendering context
+                // Render the CSV data to a view with pagination
+                res.render('csvView', { fileData, currentPage: parseInt(page), pageSize, totalPages });
             });
     } catch (error) {
         return res.status(500).json({ error: 'Internal server error!' });
     }
 };
 
-
+// Export the controller functions
 module.exports = { uploadFile, viewFile };
